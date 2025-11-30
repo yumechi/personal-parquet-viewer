@@ -44,19 +44,20 @@ jobs:
           targets: wasm32-unknown-unknown
 
       - name: Generate test data
+        continue-on-error: true
         run: |
           cd scripts
-          # Python環境のセットアップ（miseまたは直接インストール）
-          python3 -m pip install --user pyarrow || echo "pyarrow not available, skipping test data generation"
+          # Python環境のセットアップ
+          python3 -m pip install --user pyarrow
           # テストデータが存在しない場合のみ生成を試みる
           if [ ! -f "test_data/small.parquet" ]; then
-            python3 generate_test_parquet.py 1 || echo "Failed to generate test data 1"
+            python3 generate_test_parquet.py 1
           fi
           if [ ! -f "test_data2/small2.parquet" ]; then
-            python3 generate_test_parquet.py 2 || echo "Failed to generate test data 2"
+            python3 generate_test_parquet.py 2
           fi
           if [ ! -f "test_data3/small3.parquet" ]; then
-            python3 generate_test_parquet.py 3 || echo "Failed to generate test data 3"
+            python3 generate_test_parquet.py 3
           fi
 
       - name: Run WASM tests
@@ -123,25 +124,32 @@ jobs:
           npm ci
 
       - name: Generate test data for E2E tests
+        continue-on-error: true
         run: |
           cd scripts
           # Python環境のセットアップ
-          python3 -m pip install --user pyarrow || echo "pyarrow not available, skipping test data generation"
+          python3 -m pip install --user pyarrow
           # テストデータが存在しない場合のみ生成を試みる
           if [ ! -f "test_data/small.parquet" ]; then
-            python3 generate_test_parquet.py 1 || echo "Failed to generate test data 1"
+            python3 generate_test_parquet.py 1
           fi
           if [ ! -f "test_data2/small2.parquet" ]; then
-            python3 generate_test_parquet.py 2 || echo "Failed to generate test data 2"
+            python3 generate_test_parquet.py 2
           fi
           if [ ! -f "test_data3/small3.parquet" ]; then
-            python3 generate_test_parquet.py 3 || echo "Failed to generate test data 3"
+            python3 generate_test_parquet.py 3
           fi
           # E2Eテスト用のfixturesにコピー
           mkdir -p ../frontend/tests/fixtures
-          cp test_data/small.parquet ../frontend/tests/fixtures/ || echo "small.parquet not found"
-          cp test_data2/small2.parquet ../frontend/tests/fixtures/ || echo "small2.parquet not found"
-          cp test_data3/small3.parquet ../frontend/tests/fixtures/ || echo "small3.parquet not found"
+          if [ -f "test_data/small.parquet" ]; then
+            cp test_data/small.parquet ../frontend/tests/fixtures/
+          fi
+          if [ -f "test_data2/small2.parquet" ]; then
+            cp test_data2/small2.parquet ../frontend/tests/fixtures/
+          fi
+          if [ -f "test_data3/small3.parquet" ]; then
+            cp test_data3/small3.parquet ../frontend/tests/fixtures/
+          fi
 
       - name: Install Playwright browsers
         run: |
