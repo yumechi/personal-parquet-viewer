@@ -2,6 +2,10 @@
 
 WebブラウザでParquetファイルを閲覧するためのツール
 
+## デモ
+
+https://yumechi.github.io/personal-parquet-viewer/
+
 ## 特徴
 
 - ブラウザ上でParquetファイルを直接閲覧
