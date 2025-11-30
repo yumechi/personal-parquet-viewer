@@ -35,6 +35,13 @@
 			const uint8Array = new Uint8Array(arrayBuffer);
 
 			const result = wasmModule.read_parquet(uint8Array);
+
+			// 10万件を超える場合はエラー
+			if (result.total_rows > 100000) {
+				error = `File is too large: ${result.total_rows.toLocaleString()} rows. Maximum 100,000 rows are supported for browser display.`;
+				return;
+			}
+
 			parquetData = result;
 		} catch (e) {
 			error = `Error reading Parquet file: ${e}`;
@@ -49,6 +56,7 @@
 		<div class="text-center mb-8">
 			<h1 class="text-4xl font-bold text-gray-900 mb-2">Parquet Viewer</h1>
 			<p class="text-gray-600">Upload and view Parquet files in your browser</p>
+			<p class="text-sm text-gray-500 mt-2">Maximum 100,000 rows supported</p>
 		</div>
 
 		<div class="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -120,7 +128,7 @@
 							</tr>
 						</thead>
 						<tbody class="bg-white divide-y divide-gray-200">
-							{#each parquetData.rows.slice(0, 100) as row}
+							{#each parquetData.rows as row}
 								<tr>
 									{#each row as cell}
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -132,12 +140,6 @@
 						</tbody>
 					</table>
 				</div>
-
-				{#if parquetData.total_rows > 100}
-					<div class="mt-4 text-center text-gray-600">
-						<p>Showing first 100 rows of {parquetData.total_rows}</p>
-					</div>
-				{/if}
 			</div>
 		{/if}
 	</div>
