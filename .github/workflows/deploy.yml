@@ -11,6 +11,14 @@ on:
         required: false
         default: 'main'
         type: string
+      runner:
+        description: 'Runner type (ubuntu-latest, ubuntu-24.04-arm)'
+        required: false
+        default: 'ubuntu-latest'
+        type: choice
+        options:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
 
 permissions:
   contents: read
@@ -23,7 +31,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event.inputs.runner || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.0
@@ -43,24 +51,24 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('wasm/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-cargo-${{ hashFiles('wasm/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            ${{ runner.os }}-${{ runner.arch }}-cargo-
 
       - name: Cache wasm target directory
         uses: actions/cache@v4
         with:
           path: wasm/target
-          key: ${{ runner.os }}-wasm-target-${{ hashFiles('wasm/Cargo.lock', 'wasm/src/**/*.rs') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-wasm-target-${{ hashFiles('wasm/Cargo.lock', 'wasm/src/**/*.rs') }}
           restore-keys: |
-            ${{ runner.os }}-wasm-target-
+            ${{ runner.os }}-${{ runner.arch }}-wasm-target-
 
       - name: Cache wasm-pack
         uses: actions/cache@v4
         id: cache-wasm-pack
         with:
           path: ~/.cargo/bin
-          key: ${{ runner.os }}-wasm-pack-v0.13.1
+          key: ${{ runner.os }}-${{ runner.arch }}-wasm-pack-v0.13.1
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
