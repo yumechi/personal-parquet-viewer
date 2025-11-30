@@ -1,0 +1,163 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-wasm:
+    name: Test WASM
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.0
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-${{ runner.arch }}-cargo-${{ hashFiles('wasm/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-cargo-
+
+      - name: Cache wasm target directory
+        uses: actions/cache@v4
+        with:
+          path: wasm/target
+          key: ${{ runner.os }}-${{ runner.arch }}-wasm-target-${{ hashFiles('wasm/Cargo.lock', 'wasm/src/**/*.rs', 'wasm/tests/**/*.rs') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-wasm-target-
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Generate test data
+        run: |
+          cd scripts
+          # Python環境のセットアップ（miseまたは直接インストール）
+          python3 -m pip install --user pyarrow || echo "pyarrow not available, skipping test data generation"
+          # テストデータが存在しない場合のみ生成を試みる
+          if [ ! -f "test_data/small.parquet" ]; then
+            python3 generate_test_parquet.py 1 || echo "Failed to generate test data 1"
+          fi
+          if [ ! -f "test_data2/small2.parquet" ]; then
+            python3 generate_test_parquet.py 2 || echo "Failed to generate test data 2"
+          fi
+          if [ ! -f "test_data3/small3.parquet" ]; then
+            python3 generate_test_parquet.py 3 || echo "Failed to generate test data 3"
+          fi
+
+      - name: Run WASM tests
+        run: |
+          cd wasm
+          cargo test --lib --tests
+
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-${{ runner.arch }}-cargo-${{ hashFiles('wasm/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-cargo-
+
+      - name: Cache wasm target directory
+        uses: actions/cache@v4
+        with:
+          path: wasm/target
+          key: ${{ runner.os }}-${{ runner.arch }}-wasm-target-${{ hashFiles('wasm/Cargo.lock', 'wasm/src/**/*.rs') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-wasm-target-
+
+      - name: Cache wasm-pack
+        uses: actions/cache@v4
+        id: cache-wasm-pack
+        with:
+          path: ~/.cargo/bin
+          key: ${{ runner.os }}-${{ runner.arch }}-wasm-pack-v0.13.1
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        if: steps.cache-wasm-pack.outputs.cache-hit != 'true'
+        run: cargo install wasm-pack
+
+      - name: Build WASM
+        run: |
+          cd wasm
+          wasm-pack build --target web
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Generate test data for E2E tests
+        run: |
+          cd scripts
+          # Python環境のセットアップ
+          python3 -m pip install --user pyarrow || echo "pyarrow not available, skipping test data generation"
+          # テストデータが存在しない場合のみ生成を試みる
+          if [ ! -f "test_data/small.parquet" ]; then
+            python3 generate_test_parquet.py 1 || echo "Failed to generate test data 1"
+          fi
+          if [ ! -f "test_data2/small2.parquet" ]; then
+            python3 generate_test_parquet.py 2 || echo "Failed to generate test data 2"
+          fi
+          if [ ! -f "test_data3/small3.parquet" ]; then
+            python3 generate_test_parquet.py 3 || echo "Failed to generate test data 3"
+          fi
+          # E2Eテスト用のfixturesにコピー
+          mkdir -p ../frontend/tests/fixtures
+          cp test_data/small.parquet ../frontend/tests/fixtures/ || echo "small.parquet not found"
+          cp test_data2/small2.parquet ../frontend/tests/fixtures/ || echo "small2.parquet not found"
+          cp test_data3/small3.parquet ../frontend/tests/fixtures/ || echo "small3.parquet not found"
+
+      - name: Install Playwright browsers
+        run: |
+          cd frontend
+          npx playwright install --with-deps
+
+      - name: Run E2E tests
+        run: |
+          cd frontend
+          npm test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 30
+
