@@ -10,10 +10,13 @@
 
 	onMount(async () => {
 		try {
-			wasmModule = await import('parquet-viewer-wasm');
-			wasmModule.init_panic_hook();
+			const wasm = await import('parquet-viewer-wasm');
+			await wasm.default();
+			wasm.init_panic_hook();
+			wasmModule = wasm;
 		} catch (e) {
 			error = `Failed to load WASM module: ${e}`;
+			console.error('WASM loading error:', e);
 		}
 	});
 
