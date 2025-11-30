@@ -41,7 +41,6 @@ WebブラウザでParquetファイルを直接閲覧できるツールを提供�
 
 管理対象:
 - Node.js: v24
-- Deno: latest
 - Python: 3.12
 - uv: latest
 

@@ -1,6 +1,5 @@
 [tools]
 node = "24"
-deno = "latest"
 python = "3.12"
 uv = "latest"
 
