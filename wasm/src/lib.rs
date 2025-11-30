@@ -18,16 +18,17 @@ pub fn init_panic_hook() {
     console_error_panic_hook::set_once();
 }
 
-#[wasm_bindgen]
-pub fn read_parquet(data: &[u8]) -> Result<JsValue, JsValue> {
+/// 内部関数: Parquetファイルを読み込んでParquetDataを返す
+/// テストからも使用可能
+pub fn read_parquet_internal(data: &[u8]) -> Result<ParquetData, String> {
     let bytes = Bytes::from(data.to_vec());
 
     let builder = ParquetRecordBatchReaderBuilder::try_new(bytes)
-        .map_err(|e| JsValue::from_str(&format!("Failed to create reader: {}", e)))?;
+        .map_err(|e| format!("Failed to create reader: {}", e))?;
 
     let schema = builder.schema().clone();
     let mut reader = builder.build()
-        .map_err(|e| JsValue::from_str(&format!("Failed to build reader: {}", e)))?;
+        .map_err(|e| format!("Failed to build reader: {}", e))?;
 
     let mut all_rows: Vec<Vec<String>> = Vec::new();
     let columns: Vec<String> = schema
@@ -38,7 +39,7 @@ pub fn read_parquet(data: &[u8]) -> Result<JsValue, JsValue> {
 
     while let Some(batch) = reader.next() {
         let batch = batch
-            .map_err(|e| JsValue::from_str(&format!("Failed to read batch: {}", e)))?;
+            .map_err(|e| format!("Failed to read batch: {}", e))?;
 
         for row_idx in 0..batch.num_rows() {
             let mut row: Vec<String> = Vec::new();
@@ -53,11 +54,17 @@ pub fn read_parquet(data: &[u8]) -> Result<JsValue, JsValue> {
         }
     }
 
-    let result = ParquetData {
+    Ok(ParquetData {
         columns,
         total_rows: all_rows.len(),
         rows: all_rows,
-    };
+    })
+}
+
+#[wasm_bindgen]
+pub fn read_parquet(data: &[u8]) -> Result<JsValue, JsValue> {
+    let result = read_parquet_internal(data)
+        .map_err(|e| JsValue::from_str(&e))?;
 
     serde_wasm_bindgen::to_value(&result)
         .map_err(|e| JsValue::from_str(&format!("Failed to serialize: {}", e)))

@@ -76,10 +76,44 @@ npm run dev
 ```bash
 cd scripts
 mise exec -- uv sync
-mise exec -- uv run python generate_test_parquet.py
+mise exec -- uv run python generate_test_parquet.py 1    # パターン1: ユーザーデータ
+mise exec -- uv run python generate_test_parquet.py 2    # パターン2: 商品在庫データ（日本語カラム名、日付型含む）
+mise exec -- uv run python generate_test_parquet.py 3    # パターン3: 様々な日付・時刻型を含むデータ
 ```
 
-生成されたテストファイルは `scripts/test_data/` に配置されます。
+生成されたテストファイルは以下のディレクトリに配置されます：
+- `scripts/test_data/` - パターン1のデータ
+- `scripts/test_data2/` - パターン2のデータ
+- `scripts/test_data3/` - パターン3のデータ
+
+E2Eテストで使用するため、`small3.parquet`を`frontend/tests/fixtures/`にコピーしてください：
+
+```bash
+cp scripts/test_data3/small3.parquet frontend/tests/fixtures/
+```
+
+## テストの実行
+
+### WASMのテスト
+
+```bash
+cd wasm
+cargo test
+```
+
+実データを使った統合テストが実行されます。テストファイルは以下のディレクトリから読み込まれます：
+- `scripts/test_data/`
+- `scripts/test_data2/`
+- `scripts/test_data3/`
+
+### E2Eテスト
+
+```bash
+cd frontend
+npm test
+```
+
+Playwrightを使ったE2Eテストが実行されます。テストファイルは`frontend/tests/fixtures/`から読み込まれます。
 
 ## プロジェクト構成
 

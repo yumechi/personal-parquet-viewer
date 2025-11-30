@@ -16,13 +16,14 @@ def main():
 Examples:
   python generate_test_parquet.py 1    # Generate pattern 1 (user data)
   python generate_test_parquet.py 2    # Generate pattern 2 (product inventory data)
+  python generate_test_parquet.py 3    # Generate pattern 3 (date/time types)
         '''
     )
     parser.add_argument(
         'pattern',
         type=int,
-        choices=[1, 2],
-        help='Test data pattern ID (1: user data, 2: product inventory data)'
+        choices=[1, 2, 3],
+        help='Test data pattern ID (1: user data, 2: product inventory data, 3: date/time types)'
     )
     
     args = parser.parse_args()
@@ -37,6 +38,9 @@ Examples:
     elif args.pattern == 2:
         import parquet_test_data2
         parquet_test_data2.generate_test_files(script_dir)
+    elif args.pattern == 3:
+        import parquet_test_data3
+        parquet_test_data3.generate_test_files(script_dir)
     else:
         print(f"Error: Unknown pattern {args.pattern}")
         sys.exit(1)
