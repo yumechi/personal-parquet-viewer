@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: false
+        default: 'main'
+        type: string
 
 permissions:
   contents: read
@@ -19,12 +26,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.0
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6.0.0
         with:
           node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('wasm/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Cache wasm target directory
+        uses: actions/cache@v4
+        with:
+          path: wasm/target
+          key: ${{ runner.os }}-wasm-target-${{ hashFiles('wasm/Cargo.lock', 'wasm/src/**/*.rs') }}
+          restore-keys: |
+            ${{ runner.os }}-wasm-target-
+
+      - name: Cache wasm-pack
+        uses: actions/cache@v4
+        id: cache-wasm-pack
+        with:
+          path: ~/.cargo/bin
+          key: ${{ runner.os }}-wasm-pack-v0.13.1
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -32,6 +68,7 @@ jobs:
           targets: wasm32-unknown-unknown
 
       - name: Install wasm-pack
+        if: steps.cache-wasm-pack.outputs.cache-hit != 'true'
         run: cargo install wasm-pack
 
       - name: Build WASM
@@ -50,7 +87,7 @@ jobs:
           npm run build
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4.0.0
         with:
           path: ./frontend/build
 
@@ -63,4 +100,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v4.0.5
