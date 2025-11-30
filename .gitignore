@@ -22,7 +22,7 @@ Cargo.lock
 wasm/pkg/
 
 # Test data
-scripts/test_data/
+scripts/test_data*/
 !frontend/tests/fixtures/*.parquet
 
 # Playwright

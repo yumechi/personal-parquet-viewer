@@ -1,59 +1,45 @@
 #!/usr/bin/env python3
 """
 テスト用のParquetファイルを生成するスクリプト
+コマンドライン引数でテストパターンを指定可能
 """
 
-import pyarrow as pa
-import pyarrow.parquet as pq
-import random
-from datetime import datetime, timedelta
+import sys
+import argparse
 import os
 
-def generate_sample_data(num_rows=100):
-    """サンプルデータを生成"""
-    data = {
-        'id': list(range(1, num_rows + 1)),
-        'name': [f'User_{i}' for i in range(1, num_rows + 1)],
-        'age': [random.randint(18, 80) for _ in range(num_rows)],
-        'score': [round(random.uniform(0, 100), 2) for _ in range(num_rows)],
-        'active': [random.choice([True, False]) for _ in range(num_rows)],
-        'created_at': [
-            (datetime.now() - timedelta(days=random.randint(0, 365))).isoformat()
-            for _ in range(num_rows)
-        ],
-    }
-    return data
-
-def create_parquet_file(output_path, num_rows=100):
-    """Parquetファイルを作成"""
-    data = generate_sample_data(num_rows)
-
-    table = pa.table(data)
-
-    pq.write_table(table, output_path)
-    print(f"Created: {output_path} ({num_rows} rows)")
-
 def main():
+    parser = argparse.ArgumentParser(
+        description='Generate test Parquet files',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Examples:
+  python generate_test_parquet.py 1    # Generate pattern 1 (user data)
+  python generate_test_parquet.py 2    # Generate pattern 2 (product inventory data)
+        '''
+    )
+    parser.add_argument(
+        'pattern',
+        type=int,
+        choices=[1, 2],
+        help='Test data pattern ID (1: user data, 2: product inventory data)'
+    )
+    
+    args = parser.parse_args()
+    
     # スクリプトのディレクトリを取得
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(script_dir, 'test_data')
-
-    # 出力ディレクトリを作成
-    os.makedirs(output_dir, exist_ok=True)
-
-    # 様々なサイズのテストファイルを生成
-    test_files = [
-        ('small.parquet', 10),
-        ('medium.parquet', 100),
-        ('large.parquet', 1000),
-        ('xlarge.parquet', 10000),
-    ]
-
-    for filename, num_rows in test_files:
-        output_path = os.path.join(output_dir, filename)
-        create_parquet_file(output_path, num_rows)
-
-    print(f"\nAll test files created in: {output_dir}")
+    
+    # パターンに応じてモジュールをインポートして実行
+    if args.pattern == 1:
+        import parquet_test_data1
+        parquet_test_data1.generate_test_files(script_dir)
+    elif args.pattern == 2:
+        import parquet_test_data2
+        parquet_test_data2.generate_test_files(script_dir)
+    else:
+        print(f"Error: Unknown pattern {args.pattern}")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
