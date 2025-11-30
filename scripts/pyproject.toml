@@ -1,0 +1,11 @@
+[project]
+name = "parquet-viewer-scripts"
+version = "0.1.0"
+description = "Scripts for generating test Parquet files"
+requires-python = ">=3.12"
+dependencies = [
+    "pyarrow>=18.1.0",
+]
+
+[project.scripts]
+generate-test-data = "generate_test_parquet:main"

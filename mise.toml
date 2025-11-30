@@ -1,0 +1,8 @@
+[tools]
+node = "24"
+deno = "latest"
+python = "3.12"
+uv = "latest"
+
+[env]
+# プロジェクト固有の環境変数をここに追加可能
