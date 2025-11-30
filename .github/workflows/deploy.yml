@@ -12,13 +12,13 @@ on:
         default: 'main'
         type: string
       runner:
-        description: 'Runner type (ubuntu-latest, ubuntu-24.04-arm)'
+        description: 'Runner type (ubuntu-24.04-arm, ubuntu-latest)'
         required: false
-        default: 'ubuntu-latest'
+        default: 'ubuntu-24.04-arm'
         type: choice
         options:
-          - ubuntu-latest
           - ubuntu-24.04-arm
+          - ubuntu-latest
 
 permissions:
   contents: read
@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ${{ github.event.inputs.runner || 'ubuntu-latest' }}
+    runs-on: ${{ github.event.inputs.runner || 'ubuntu-24.04-arm' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.0
