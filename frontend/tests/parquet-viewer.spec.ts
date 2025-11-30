@@ -47,6 +47,46 @@ test.describe('Parquet Viewer', () => {
 		expect(rowCount).toBeLessThanOrEqual(10); // small.parquetは10行
 	});
 
+	test('should upload and display parquet file with Japanese column names', async ({ page }) => {
+		await page.goto('/');
+
+		// ファイルアップロード（small2.parquet - 日本語カラム名の商品在庫データ）
+		const fileInput = page.locator('input[type="file"]');
+		const filePath = path.join(__dirname, 'fixtures', 'small2.parquet');
+		await fileInput.setInputFiles(filePath);
+
+		// データが読み込まれるまで待機
+		await expect(page.getByText('Data Preview')).toBeVisible({ timeout: 10000 });
+
+		// 総行数が表示されることを確認
+		await expect(page.getByText(/Total rows: \d+/)).toBeVisible();
+
+		// テーブルが表示されることを確認
+		const table = page.locator('table');
+		await expect(table).toBeVisible();
+
+		// ヘッダー列を確認（small2.parquetのスキーマに基づく - 日本語カラム名）
+		await expect(page.getByRole('columnheader', { name: '商品ID' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: '商品名' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: 'カテゴリ' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: '価格' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: '在庫数' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: 'ステータス' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: '評価' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: 'レビュー数' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: '発売日' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: '最終更新日時' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: '割引率' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: '在庫警告' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: 'タグ' })).toBeVisible();
+
+		// データ行が存在することを確認
+		const rows = page.locator('tbody tr');
+		const rowCount = await rows.count();
+		expect(rowCount).toBeGreaterThan(0);
+		expect(rowCount).toBeLessThanOrEqual(10); // small2.parquetは10行
+	});
+
 	test('should show error for files larger than 100,000 rows', async ({ page }) => {
 		await page.goto('/');
 
