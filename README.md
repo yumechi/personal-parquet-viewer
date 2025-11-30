@@ -32,10 +32,28 @@ mise install
 
 ### 2. WebAssemblyのビルド
 
+WASMをビルドするには、Rustとwasm-packが必要です。
+
+#### 前提条件
+
+- **Rust**: [rustup](https://rustup.rs/)でインストール
+- **wasm-pack**: `cargo install wasm-pack`でインストール
+- **wasm32-unknown-unknownターゲット**: `rustup target add wasm32-unknown-unknown`でインストール
+
+#### ビルド手順
+
 ```bash
 cd wasm
 wasm-pack build --target web
 ```
+
+ビルドが成功すると、`wasm/pkg/`ディレクトリに以下のファイルが生成されます：
+- `parquet_viewer_wasm.js` - JavaScriptバインディング
+- `parquet_viewer_wasm_bg.wasm` - WebAssemblyバイナリ
+- `parquet_viewer_wasm.d.ts` - TypeScript型定義
+- `package.json` - npmパッケージ情報
+
+これらのファイルは、フロントエンドの`package.json`で`file:../wasm/pkg`として参照されています。
 
 ### 3. フロントエンドのセットアップ
 
