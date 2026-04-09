@@ -20,8 +20,11 @@ export default defineConfig({
 	],
 
 	webServer: {
-		command: 'npm run build && npm run preview',
+		// build はワークフロー側で別ステップとして実行する。
+		// ここでは preview の起動だけを待つので 60s で十分。
+		command: 'npm run preview',
 		url: 'http://localhost:4173',
 		reuseExistingServer: !process.env.CI,
+		timeout: 60_000,
 	},
 });
