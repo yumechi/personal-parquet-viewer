@@ -90,6 +90,8 @@ jobs:
           npm ci
 
       - name: Build frontend
+        env:
+          BASE_PATH: /personal-parquet-viewer
         run: |
           cd frontend
           npm run build
