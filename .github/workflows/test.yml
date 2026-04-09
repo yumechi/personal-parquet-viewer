@@ -18,10 +18,10 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Cache Cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cargo/registry
@@ -31,7 +31,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-cargo-
 
       - name: Cache wasm target directory
-        uses: actions/cache@v4
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: wasm/target
           key: ${{ runner.os }}-${{ runner.arch }}-wasm-target-${{ hashFiles('wasm/Cargo.lock', 'wasm/src/**/*.rs', 'wasm/tests/**/*.rs') }}
@@ -70,17 +70,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6.0.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
       - name: Cache Cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cargo/registry
@@ -90,7 +90,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-cargo-
 
       - name: Cache wasm target directory
-        uses: actions/cache@v4
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: wasm/target
           key: ${{ runner.os }}-${{ runner.arch }}-wasm-target-${{ hashFiles('wasm/Cargo.lock', 'wasm/src/**/*.rs') }}
@@ -98,7 +98,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-wasm-target-
 
       - name: Cache wasm-pack
-        uses: actions/cache@v4
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         id: cache-wasm-pack
         with:
           path: ~/.cargo/bin
@@ -163,7 +163,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: playwright-report
           path: frontend/playwright-report/
