@@ -65,19 +65,12 @@ jobs:
           cd wasm
           cargo test --lib --tests
 
-  test-frontend:
-    name: Test Frontend
+  build-wasm-pkg:
+    name: Build WASM pkg
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Cache Cargo registry
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
@@ -89,13 +82,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-cargo-
 
-      - name: Cache wasm target directory
+      - name: Cache wasm-pack target directory
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: wasm/target
-          key: ${{ runner.os }}-${{ runner.arch }}-wasm-target-${{ hashFiles('wasm/Cargo.lock', 'wasm/src/**/*.rs') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-wasm-pack-target-${{ hashFiles('wasm/Cargo.lock', 'wasm/src/**/*.rs') }}
           restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-wasm-target-
+            ${{ runner.os }}-${{ runner.arch }}-wasm-pack-target-
 
       - name: Cache wasm-pack
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
@@ -117,6 +110,44 @@ jobs:
         run: |
           cd wasm
           wasm-pack build --target web
+
+      - name: Upload wasm/pkg artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: wasm-pkg
+          path: wasm/pkg
+          retention-days: 1
+          if-no-files-found: error
+
+  test-frontend:
+    name: Test Frontend
+    needs: build-wasm-pkg
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Download wasm/pkg artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: wasm-pkg
+          path: wasm/pkg
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        id: cache-playwright
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
       - name: Install frontend dependencies
         run: |
@@ -154,7 +185,17 @@ jobs:
       - name: Install Playwright browsers
         run: |
           cd frontend
-          npx playwright install --with-deps
+          if [ "${{ steps.cache-playwright.outputs.cache-hit }}" = "true" ]; then
+            # ブラウザバイナリはキャッシュから復元済み。システム依存だけ入れる
+            npx playwright install-deps
+          else
+            npx playwright install --with-deps
+          fi
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
 
       - name: Run E2E tests
         run: |
@@ -168,4 +209,3 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report/
           retention-days: 30
-
